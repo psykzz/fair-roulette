@@ -1,0 +1,5 @@
+{
+  "name": "Fair Meeting Roulette",
+  "description": "A web application to fairly select a random team member to run a meeting. It remembers previous selections to ensure everyone gets a turn over time.",
+  "requestFramePermissions": []
+}
