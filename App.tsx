@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTeam } from './hooks/useTeam';
 import TeamManagement from './components/TeamManagement';
+import Avatar from './components/Avatar';
 import { TeamMember } from './types';
 
 const App: React.FC = () => {
@@ -49,13 +50,16 @@ const App: React.FC = () => {
 
       <main className="w-full flex flex-col items-center space-y-8">
         <div className="w-full max-w-md bg-slate-800 rounded-xl shadow-2xl p-8 text-center space-y-6">
-          <div className="h-24 flex items-center justify-center">
+          <div className="h-32 flex flex-col items-center justify-center space-y-4">
             {isSpinning ? (
               <div className="text-4xl font-bold text-indigo-300 animate-pulse">{spinDisplay}</div>
             ) : selectedLeader ? (
-              <div className="animate-reveal">
-                <p className="text-slate-400 text-lg">The chosen one is...</p>
-                <p className="text-5xl font-bold text-green-400 mt-1">{selectedLeader.name}!</p>
+              <div className="animate-reveal flex flex-col items-center space-y-3">
+                <Avatar src={selectedLeader.image} name={selectedLeader.name} size="xl" />
+                <div>
+                  <p className="text-slate-400 text-lg">The chosen one is...</p>
+                  <p className="text-4xl font-bold text-green-400 mt-1">{selectedLeader.name}!</p>
+                </div>
               </div>
             ) : (
               <p className="text-2xl text-slate-500">Ready to pick a leader?</p>
