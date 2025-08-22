@@ -1,6 +1,8 @@
 # Fair Meeting Roulette
 
-A fair and balanced way to choose your next meeting facilitator. The longer someone hasn't been chosen, the higher their chances of being selected!
+A fair and balanced way to choose your next meeting facilitator. The longer someone waits, the higher their chances of being selected!
+
+This contains everything you need to run your app locally or deploy it to GitHub Pages.
 
 ## Features
 
@@ -32,6 +34,8 @@ If Supabase is not configured, the application automatically falls back to local
 
 ## Getting Started
 
+**Prerequisites:** Node.js
+
 1. Clone the repository
 2. Install dependencies: `npm install`
 3. (Optional) Set up Supabase using the instructions above
@@ -45,6 +49,22 @@ npm run build
 ```
 
 The built files will be in the `dist` directory.
+
+## Deployment
+
+The app is automatically deployed to GitHub Pages when changes are pushed to the `main` branch.
+
+- **Live URL:** https://psykzz.github.io/fair-roulette/
+- **Deployment:** Automatic via GitHub Actions
+- **Build Command:** `npm run build`
+
+### Manual Deployment
+
+To manually deploy:
+
+1. Build the project: `npm run build`
+2. The built files will be in the `dist/` directory
+3. Deploy the `dist/` folder to any static hosting service
 
 ## How It Works
 
