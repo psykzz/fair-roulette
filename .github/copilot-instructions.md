@@ -3,7 +3,7 @@
 **ALWAYS reference these instructions first and only fallback to search or bash commands when you encounter unexpected information that does not match the information provided here.**
 
 ## Overview
-Fair Meeting Roulette is a React/TypeScript web application built with Vite that implements a fair meeting facilitator selection system. The application uses a weighted random selection algorithm that adjusts probabilities over time to ensure everyone gets chosen fairly. It stores team data in a database and features a modern UI built with Tailwind CSS.
+Fair Meeting Roulette is a React/TypeScript web application built with Vite that implements a fair meeting facilitator selection system. The application uses a weighted random selection algorithm that adjusts probabilities over time to ensure everyone gets chosen fairly. It stores team data in localStorage and features a modern UI built with Tailwind CSS.
 
 ## Development Setup & Build Process
 
