@@ -29,12 +29,13 @@ const useLocalStorageTeam = () => {
     }
   }, [team]);
 
-  const addMember = useCallback((name: string) => {
+  const addMember = useCallback((name: string, image?: string) => {
     if (name.trim() === '') return;
     const newMember: TeamMember = {
       id: crypto.randomUUID(),
       name: name.trim(),
       weight: BASE_WEIGHT,
+      image: image?.trim() || undefined,
     };
     setTeam(prevTeam => [...prevTeam, newMember]);
   }, []);

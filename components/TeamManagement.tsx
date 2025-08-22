@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { TeamMember } from '../types';
+import Avatar from './Avatar';
 
 interface TeamManagementProps {
   team: TeamMember[];
-  addMember: (name: string) => void;
+  addMember: (name: string, image?: string) => void;
   removeMember: (id: string) => void;
 }
 
@@ -16,11 +17,13 @@ const TrashIcon = () => (
 
 const TeamManagement: React.FC<TeamManagementProps> = ({ team, addMember, removeMember }) => {
   const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberImage, setNewMemberImage] = useState('');
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
-    addMember(newMemberName);
+    addMember(newMemberName, newMemberImage);
     setNewMemberName('');
+    setNewMemberImage('');
   };
 
   const getChance = (weight: number) => {
@@ -33,20 +36,27 @@ const TeamManagement: React.FC<TeamManagementProps> = ({ team, addMember, remove
     <div className="w-full max-w-md mx-auto bg-slate-800 rounded-xl shadow-lg p-6 space-y-6">
       <h2 className="text-2xl font-bold text-center text-indigo-400">Manage Team</h2>
       
-      <form onSubmit={handleAddMember} className="flex gap-2">
+      <form onSubmit={handleAddMember} className="space-y-3">
         <input
           type="text"
           value={newMemberName}
           onChange={(e) => setNewMemberName(e.target.value)}
           placeholder="Add new team member"
-          className="flex-grow bg-slate-700 text-white placeholder-slate-400 rounded-md px-4 py-2 border border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+          className="w-full bg-slate-700 text-white placeholder-slate-400 rounded-md px-4 py-2 border border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+        />
+        <input
+          type="url"
+          value={newMemberImage}
+          onChange={(e) => setNewMemberImage(e.target.value)}
+          placeholder="Image URL (optional)"
+          className="w-full bg-slate-700 text-white placeholder-slate-400 rounded-md px-4 py-2 border border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
         />
         <button
           type="submit"
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md px-4 py-2 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
+          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md px-4 py-2 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
           disabled={!newMemberName.trim()}
         >
-          Add
+          Add Member
         </button>
       </form>
 
@@ -56,9 +66,12 @@ const TeamManagement: React.FC<TeamManagementProps> = ({ team, addMember, remove
           <ul className="max-h-60 overflow-y-auto pr-2">
             {team.map((member) => (
               <li key={member.id} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg mb-2 group">
-                <div className="flex items-center gap-4">
-                    <div className="font-mono text-xs text-indigo-300 w-14 text-right">{getChance(member.weight)}</div>
-                    <span className="text-slate-100">{member.name}</span>
+                <div className="flex items-center gap-3">
+                  <Avatar src={member.image} name={member.name} size="md" />
+                  <div className="flex flex-col">
+                    <span className="text-slate-100 font-medium">{member.name}</span>
+                    <div className="font-mono text-xs text-indigo-300">{getChance(member.weight)} chance</div>
+                  </div>
                 </div>
                 <button
                   onClick={() => removeMember(member.id)}
