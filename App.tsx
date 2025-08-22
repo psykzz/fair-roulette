@@ -4,12 +4,18 @@ import { useTeam } from './hooks/useTeam';
 import TeamManagement from './components/TeamManagement';
 import Avatar from './components/Avatar';
 import { TeamMember } from './types';
+import { ensureSessionId } from './utils/sessionId';
 
 const App: React.FC = () => {
   const { team, addMember, removeMember, selectFairly, loading, error, refreshTeam } = useTeam();
   const [selectedLeader, setSelectedLeader] = useState<TeamMember | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinDisplay, setSpinDisplay] = useState<string>('');
+
+  // Ensure session ID is set in URL on app load
+  useEffect(() => {
+    ensureSessionId();
+  }, []);
 
   useEffect(() => {
     let spinInterval: number;

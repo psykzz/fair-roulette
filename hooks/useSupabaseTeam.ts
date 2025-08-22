@@ -1,18 +1,56 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from '../types';
 import { supabase } from '../lib/supabase';
-import { INITIAL_TEAM, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
+import { INITIAL_TEAM, getStorageKey, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
+import { ensureSessionId } from '../utils/sessionId';
 
 export const useSupabaseTeam = () => {
+  const [sessionId, setSessionId] = useState(() => ensureSessionId());
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Update session ID when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setSessionId(ensureSessionId());
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Helper function to get storage key for current session
+  const getSessionStorageKey = useCallback(() => getStorageKey(sessionId), [sessionId]);
+
+  // Helper function to load from localStorage
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const storageKey = getSessionStorageKey();
+      const storedTeam = window.localStorage.getItem(storageKey);
+      return storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM;
+    } catch (error) {
+      console.error("Error reading from localStorage", error);
+      return INITIAL_TEAM;
+    }
+  }, [getSessionStorageKey]);
+
+  // Helper function to save to localStorage
+  const saveToLocalStorage = useCallback((teamData: TeamMember[]) => {
+    try {
+      const storageKey = getSessionStorageKey();
+      window.localStorage.setItem(storageKey, JSON.stringify(teamData));
+    } catch (error) {
+      console.error("Error writing to localStorage", error);
+    }
+  }, [getSessionStorageKey]);
 
   // Load team members from Supabase
   const loadTeam = useCallback(async () => {
     if (!supabase) {
       setError('Supabase client not configured');
-      setTeam(INITIAL_TEAM);
+      const localTeam = loadFromLocalStorage();
+      setTeam(localTeam);
       setLoading(false);
       return;
     }
@@ -32,6 +70,7 @@ export const useSupabaseTeam = () => {
 
       if (data && data.length > 0) {
         setTeam(data);
+        saveToLocalStorage(data);
       } else {
         // If no data exists, initialize with default team
         await initializeDefaultTeam();
@@ -39,17 +78,19 @@ export const useSupabaseTeam = () => {
     } catch (error) {
       console.error('Error loading team:', error);
       setError(error instanceof Error ? error.message : 'Failed to load team');
-      // Fallback to local state with initial team
-      setTeam(INITIAL_TEAM);
+      // Fallback to localStorage
+      const localTeam = loadFromLocalStorage();
+      setTeam(localTeam);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadFromLocalStorage, saveToLocalStorage]);
 
   // Initialize default team in Supabase
   const initializeDefaultTeam = useCallback(async () => {
     if (!supabase) {
       setTeam(INITIAL_TEAM);
+      saveToLocalStorage(INITIAL_TEAM);
       return;
     }
 
@@ -71,17 +112,29 @@ export const useSupabaseTeam = () => {
 
       if (data) {
         setTeam(data);
+        saveToLocalStorage(data);
       }
     } catch (error) {
       console.error('Error initializing default team:', error);
       // Fallback to local state
       setTeam(INITIAL_TEAM);
+      saveToLocalStorage(INITIAL_TEAM);
     }
-  }, []);
+  }, [saveToLocalStorage]);
 
-  // Load team on mount
+  // Load team on mount and when session ID changes
   useEffect(() => {
     loadTeam();
+  }, [loadTeam, sessionId]);
+
+  // Listen for hash changes to reload team data when switching sessions
+  useEffect(() => {
+    const handleHashChange = () => {
+      loadTeam();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [loadTeam]);
 
   const addMember = useCallback(async (name: string) => {
@@ -94,7 +147,9 @@ export const useSupabaseTeam = () => {
         name: name.trim(),
         weight: BASE_WEIGHT,
       };
-      setTeam(prevTeam => [...prevTeam, fallbackMember]);
+      const newTeam = [...team, fallbackMember];
+      setTeam(newTeam);
+      saveToLocalStorage(newTeam);
       return;
     }
     
@@ -116,7 +171,9 @@ export const useSupabaseTeam = () => {
       }
 
       if (data) {
-        setTeam(prevTeam => [...prevTeam, data]);
+        const newTeam = [...team, data];
+        setTeam(newTeam);
+        saveToLocalStorage(newTeam);
       }
     } catch (error) {
       console.error('Error adding member:', error);
@@ -127,14 +184,18 @@ export const useSupabaseTeam = () => {
         name: name.trim(),
         weight: BASE_WEIGHT,
       };
-      setTeam(prevTeam => [...prevTeam, fallbackMember]);
+      const newTeam = [...team, fallbackMember];
+      setTeam(newTeam);
+      saveToLocalStorage(newTeam);
     }
-  }, []);
+  }, [saveToLocalStorage, team]);
 
   const removeMember = useCallback(async (id: string) => {
     if (!supabase) {
       // Fallback to local state
-      setTeam(prevTeam => prevTeam.filter(member => member.id !== id));
+      const newTeam = team.filter(member => member.id !== id);
+      setTeam(newTeam);
+      saveToLocalStorage(newTeam);
       return;
     }
 
@@ -149,14 +210,18 @@ export const useSupabaseTeam = () => {
         throw error;
       }
 
-      setTeam(prevTeam => prevTeam.filter(member => member.id !== id));
+      const newTeam = team.filter(member => member.id !== id);
+      setTeam(newTeam);
+      saveToLocalStorage(newTeam);
     } catch (error) {
       console.error('Error removing member:', error);
       setError(error instanceof Error ? error.message : 'Failed to remove member');
       // Still update local state even if database update fails
-      setTeam(prevTeam => prevTeam.filter(member => member.id !== id));
+      const newTeam = team.filter(member => member.id !== id);
+      setTeam(newTeam);
+      saveToLocalStorage(newTeam);
     }
-  }, []);
+  }, [saveToLocalStorage, team]);
 
   const selectFairly = useCallback(async () => {
     if (team.length === 0) return null;
@@ -189,6 +254,7 @@ export const useSupabaseTeam = () => {
     if (!supabase) {
       // Fallback to local state
       setTeam(updatedTeam);
+      saveToLocalStorage(updatedTeam);
       return selectedMember;
     }
 
@@ -204,15 +270,17 @@ export const useSupabaseTeam = () => {
 
       await Promise.all(updatePromises);
       setTeam(updatedTeam);
+      saveToLocalStorage(updatedTeam);
     } catch (error) {
       console.error('Error updating weights:', error);
       setError(error instanceof Error ? error.message : 'Failed to update weights');
       // Still update local state even if database update fails
       setTeam(updatedTeam);
+      saveToLocalStorage(updatedTeam);
     }
 
     return selectedMember;
-  }, [team]);
+  }, [team, saveToLocalStorage]);
 
   return { 
     team, 

@@ -1,9 +1,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from '../types';
-import { INITIAL_TEAM, STORAGE_KEY, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
+import { INITIAL_TEAM, getStorageKey, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
 import { useSupabaseTeam } from './useSupabaseTeam';
 import { supabase } from '../lib/supabase';
+import { ensureSessionId } from '../utils/sessionId';
 
 // Check if Supabase is configured
 const isSupabaseConfigured = () => {
@@ -12,23 +13,40 @@ const isSupabaseConfigured = () => {
 
 // Original localStorage-based implementation
 const useLocalStorageTeam = () => {
-  const [team, setTeam] = useState<TeamMember[]>(() => {
+  const [sessionId, setSessionId] = useState(() => ensureSessionId());
+  const [team, setTeam] = useState<TeamMember[]>([]);
+
+  // Update session ID when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setSessionId(ensureSessionId());
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Load team data when session ID changes
+  useEffect(() => {
+    const storageKey = getStorageKey(sessionId);
     try {
-      const storedTeam = window.localStorage.getItem(STORAGE_KEY);
-      return storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM;
+      const storedTeam = window.localStorage.getItem(storageKey);
+      setTeam(storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM);
     } catch (error) {
       console.error("Error reading from localStorage", error);
-      return INITIAL_TEAM;
+      setTeam(INITIAL_TEAM);
     }
-  });
+  }, [sessionId]);
 
+  // Save team data to localStorage when team changes
   useEffect(() => {
+    const storageKey = getStorageKey(sessionId);
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(team));
+      window.localStorage.setItem(storageKey, JSON.stringify(team));
     } catch (error) {
       console.error("Error writing to localStorage", error);
     }
-  }, [team]);
+  }, [team, sessionId]);
 
   const addMember = useCallback((name: string, image?: string) => {
     if (name.trim() === '') return;

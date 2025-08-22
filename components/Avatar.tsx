@@ -14,7 +14,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'md' }) => {
     xl: 'w-24 h-24 text-2xl'
   };
 
-  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const initials = (name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   return (
     <div className="relative">
@@ -22,7 +22,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'md' }) => {
         <>
           <img 
             src={src} 
-            alt={`${name}'s avatar`}
+            alt={`${name || 'User'}'s avatar`}
             className={`${sizeClasses[size]} rounded-full object-cover border-2 border-slate-600`}
             onError={(e) => {
               // Fallback to initials if image fails to load
