@@ -1,9 +1,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from '../types';
-import { INITIAL_TEAM, STORAGE_KEY, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
+import { INITIAL_TEAM, getStorageKey, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
 import { useSupabaseTeam } from './useSupabaseTeam';
 import { supabase } from '../lib/supabase';
+import { ensureSessionId } from '../utils/sessionId';
 
 // Check if Supabase is configured
 const isSupabaseConfigured = () => {
@@ -12,9 +13,12 @@ const isSupabaseConfigured = () => {
 
 // Original localStorage-based implementation
 const useLocalStorageTeam = () => {
+  const sessionId = ensureSessionId();
+  const storageKey = getStorageKey(sessionId);
+  
   const [team, setTeam] = useState<TeamMember[]>(() => {
     try {
-      const storedTeam = window.localStorage.getItem(STORAGE_KEY);
+      const storedTeam = window.localStorage.getItem(storageKey);
       return storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM;
     } catch (error) {
       console.error("Error reading from localStorage", error);
@@ -24,11 +28,11 @@ const useLocalStorageTeam = () => {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(team));
+      window.localStorage.setItem(storageKey, JSON.stringify(team));
     } catch (error) {
       console.error("Error writing to localStorage", error);
     }
-  }, [team]);
+  }, [team, storageKey]);
 
   const addMember = useCallback((name: string, image?: string) => {
     if (name.trim() === '') return;
