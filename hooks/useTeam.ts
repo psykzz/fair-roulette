@@ -13,26 +13,40 @@ const isSupabaseConfigured = () => {
 
 // Original localStorage-based implementation
 const useLocalStorageTeam = () => {
-  const sessionId = ensureSessionId();
-  const storageKey = getStorageKey(sessionId);
-  
-  const [team, setTeam] = useState<TeamMember[]>(() => {
+  const [sessionId, setSessionId] = useState(() => ensureSessionId());
+  const [team, setTeam] = useState<TeamMember[]>([]);
+
+  // Update session ID when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setSessionId(ensureSessionId());
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Load team data when session ID changes
+  useEffect(() => {
+    const storageKey = getStorageKey(sessionId);
     try {
       const storedTeam = window.localStorage.getItem(storageKey);
-      return storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM;
+      setTeam(storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM);
     } catch (error) {
       console.error("Error reading from localStorage", error);
-      return INITIAL_TEAM;
+      setTeam(INITIAL_TEAM);
     }
-  });
+  }, [sessionId]);
 
+  // Save team data to localStorage when team changes
   useEffect(() => {
+    const storageKey = getStorageKey(sessionId);
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(team));
     } catch (error) {
       console.error("Error writing to localStorage", error);
     }
-  }, [team, storageKey]);
+  }, [team, sessionId]);
 
   const addMember = useCallback((name: string, image?: string) => {
     if (name.trim() === '') return;

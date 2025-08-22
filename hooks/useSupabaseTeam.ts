@@ -5,31 +5,45 @@ import { INITIAL_TEAM, getStorageKey, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WE
 import { ensureSessionId } from '../utils/sessionId';
 
 export const useSupabaseTeam = () => {
-  const sessionId = ensureSessionId();
-  const storageKey = getStorageKey(sessionId);
+  const [sessionId, setSessionId] = useState(() => ensureSessionId());
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Update session ID when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setSessionId(ensureSessionId());
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Helper function to get storage key for current session
+  const getSessionStorageKey = useCallback(() => getStorageKey(sessionId), [sessionId]);
+
   // Helper function to load from localStorage
   const loadFromLocalStorage = useCallback(() => {
     try {
+      const storageKey = getSessionStorageKey();
       const storedTeam = window.localStorage.getItem(storageKey);
       return storedTeam ? JSON.parse(storedTeam) : INITIAL_TEAM;
     } catch (error) {
       console.error("Error reading from localStorage", error);
       return INITIAL_TEAM;
     }
-  }, [storageKey]);
+  }, [getSessionStorageKey]);
 
   // Helper function to save to localStorage
   const saveToLocalStorage = useCallback((teamData: TeamMember[]) => {
     try {
+      const storageKey = getSessionStorageKey();
       window.localStorage.setItem(storageKey, JSON.stringify(teamData));
     } catch (error) {
       console.error("Error writing to localStorage", error);
     }
-  }, [storageKey]);
+  }, [getSessionStorageKey]);
 
   // Load team members from Supabase
   const loadTeam = useCallback(async () => {
@@ -108,9 +122,19 @@ export const useSupabaseTeam = () => {
     }
   }, [saveToLocalStorage]);
 
-  // Load team on mount
+  // Load team on mount and when session ID changes
   useEffect(() => {
     loadTeam();
+  }, [loadTeam, sessionId]);
+
+  // Listen for hash changes to reload team data when switching sessions
+  useEffect(() => {
+    const handleHashChange = () => {
+      loadTeam();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [loadTeam]);
 
   const addMember = useCallback(async (name: string) => {
