@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      envPrefix: ['VITE_', 'SUPABASE_']
     };
 });
