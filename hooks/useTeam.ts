@@ -2,8 +2,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from '../types';
 import { INITIAL_TEAM, STORAGE_KEY, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
+import { useSupabaseTeam } from './useSupabaseTeam';
 
-export const useTeam = () => {
+// Check if Supabase is configured
+const isSupabaseConfigured = () => {
+  return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+};
+
+// Original localStorage-based implementation
+const useLocalStorageTeam = () => {
   const [team, setTeam] = useState<TeamMember[]>(() => {
     try {
       const storedTeam = window.localStorage.getItem(STORAGE_KEY);
@@ -69,5 +76,22 @@ export const useTeam = () => {
     return selectedMember;
   }, [team]);
 
-  return { team, addMember, removeMember, selectFairly };
+  return { 
+    team, 
+    addMember, 
+    removeMember, 
+    selectFairly, 
+    loading: false, 
+    error: null,
+    refreshTeam: () => {} 
+  };
+};
+
+export const useTeam = () => {
+  if (isSupabaseConfigured()) {
+    return useSupabaseTeam();
+  } else {
+    console.log('Supabase not configured, using localStorage fallback');
+    return useLocalStorageTeam();
+  }
 };
