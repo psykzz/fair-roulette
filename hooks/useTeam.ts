@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { TeamMember } from '../types';
 import { INITIAL_TEAM, STORAGE_KEY, BASE_WEIGHT, SELECTED_WEIGHT, INCREMENT_WEIGHT } from '../constants';
 import { useSupabaseTeam } from './useSupabaseTeam';
-import { supabase } from '../lib/supebase';
+import { supabase } from '../lib/supabase';
 
 // Check if Supabase is configured
 const isSupabaseConfigured = () => {
